@@ -77,9 +77,10 @@ total_obs <- Data[,variable.cols] %>%
   summarize(total_obs = n())
 write_clip(total_obs,return_new=TRUE) # Look at the number of data points and variables (copies data to clipboard)
 
+#QAQC data: Run the following scripts in order.
 
 # #Check for any missing censor codes
-source("scripts/missing_censor_codes.R") #look at temp.flags
+source("scripts/missing_censor_codes.R") #look file written to output folder. If any observations exist, send to data manager to address
 
 #estimate euclidian distances between all points and identify points that are long way
 #away from their nearist nth neighbor

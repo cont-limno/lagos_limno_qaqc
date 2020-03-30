@@ -1,7 +1,11 @@
-library(naniar)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(naniar)
+
+#temporary file to store data with missing censor codes
 temp.flags = data.frame(lagoslakeid = NA,eventidb = NA,programid = NA,variable=NA,value=NA,flag=NA)
 temp.flags = temp.flags[-1,]
 
+#loop through all the data and find values with missing censor codes
 for(i in 1:length(variable.cols)) {
   sensor.col = which(names(Data)==paste(names(Data)[variable.cols[i]],"_censorcode",sep=""))
   #if(i != 11) { #Can't remember why I excluded tdn in the past...i think the algorithm crapped out
@@ -23,7 +27,7 @@ for(i in 1:length(variable.cols)) {
   }
 }
 
-temp.flags <- temp.flags %>% filter(variable != "secchi")
+# temp.flags <- temp.flags %>% filter(variable != "secchi")
 write_csv(temp.flags,"output/missing_censor_codes.csv")
 
 # temp.flags = temp.flags[which(temp.flags$variable!="secchi"),]
