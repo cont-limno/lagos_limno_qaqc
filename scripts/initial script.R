@@ -77,15 +77,21 @@ total_obs <- Data[,variable.cols] %>%
   summarize(total_obs = n())
 write_clip(total_obs,return_new=TRUE) # Look at the number of data points and variables (copies data to clipboard)
 
+
+# #Check for any missing censor codes
+source("scripts/missing_censor_codes.R") #look at temp.flags
+
+#estimate euclidian distances between all points and identify points that are long way
+#away from their nearist nth neighbor
+source("scripts/biplot outliers (ALL).R")
+
 # #generate histograms and boxplots of variables by program
 # censored = 0 # set to 1 to only generate histograms of sensored data, 0 for all data
 # source("Program_Fequency_Plots.R")
 # #Copy pdf output to appropriate folder
 # #Look at program frequency and see if program issues exist
 # 
-# #Check for any missing censor codes
-# #####NOTE rewrite some error checking code for sensor_code names
-# source("missing_censor_codes.R") #look at temp.flags
+
 # 
 # #Identify, flag, and remove non_cen_zeros
 # source("Non_cen_zeros.R")
@@ -98,9 +104,7 @@ write_clip(total_obs,return_new=TRUE) # Look at the number of data points and va
 # #Identify and flag values that flag the ceiling and mav limits
 # source("MAVS.R")
 
-#estimate euclidian distances between all points and identify points that are long way
-#away from their nearist nth neighbor
-source("scripts/biplot outliers (ALL).R")
+
 # 
 # source("OutlierDetection.R") #used iqr = 8, p = 0.0001
 # source("stripoutliers.R")
