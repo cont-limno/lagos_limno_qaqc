@@ -4,9 +4,11 @@ library(FNN)
 library(robustbase)
 library(scales)
 library(gridExtra)
+library(mvoutlier)
+# library(MVN)
+library(rstatix)
 
-
-outlier.dist = function(dat,k=4,method = "brute",iqr=15) {
+outlier.dist = function(dat,k=4,method = "brute",iqr=15,alpha=0.0001) {
   #function to estimate euclidian distances between all points in a pairwise dataset (X)
   #distance to the k nearest neighbor is estimated and robust boxplot is used to identify
   #distances that are considered outliers at specified iqr value
@@ -15,7 +17,17 @@ outlier.dist = function(dat,k=4,method = "brute",iqr=15) {
   box = adjbox(scores,range=iqr,plot = FALSE)
   if (box$fence[2]==0) out.box = box$out>max(scores) else out.box = box$out>box$fence[2]
   box = box$out[out.box]
-  out <- dat %>% mutate(Outlier = (scores %in% box))
+  out <- dat %>% mutate(outlier1 = (scores %in% box))
+  #normal Mahalab
+  threshold <- stats::qchisq(1-alpha, dim(dat)[2])
+  .data <- dat %>% 
+    as.matrix()
+  distance <- stats::mahalanobis(
+    .data,
+    center = colMeans(.data),
+    cov = cov(.data)
+  )
+  out <- out %>% mutate(outlier2 = distance > threshold)
   return(out)
 }
 
@@ -39,17 +51,20 @@ for (s in 1:nrow(combinations)) {
   y.col = variable.cols[combinations[s,2]]
   X = Data[,c(first.cols,x.col,y.col)] %>% drop_na() %>% # lines 41 and 42 to be deleted after I have incorporated range checks
     gather(key = "parameter",value= "value", -lagoslakeid,-eventida,-programid_lagos_us) %>% 
-    filter(value >= 0) %>% spread(value = value, key = parameter) %>% drop_na()
+    filter(value > 0) %>% spread(value = value, key = parameter) %>% drop_na()
   
   if(nrow(X) >= 100) { #only run this analysis if there are 100 pairs of data
     raw.data <- X
     X[,4] = log(X[,4]+1) #log transform data
     X[,5] = log(X[,5]+1)
     plot.data = outlier.dist(dat = X[,4:5]) #identify the outliers
-    
+
     #create plots
-    plot[[i]] <- ggplot(data = plot.data %>% filter(Outlier==FALSE),aes_string(x=names(plot.data)[1],y=names(plot.data)[2])) + geom_bin2d(bins=100) +
-      geom_point(data = plot.data %>% filter(Outlier==TRUE),aes_string(x=names(plot.data)[1],y=names(plot.data)[2]),colour=alpha("red",0.5),size=2) +
+    plot[[i]] <- ggplot(data = plot.data ,aes_string(x=names(plot.data)[1],y=names(plot.data)[2])) + geom_bin2d(bins=100) +
+            geom_point(data = plot.data %>% filter(outlier2==TRUE),
+                       aes_string(x=names(plot.data)[1],y=names(plot.data)[2]),colour=alpha("red",0.5),size=2) +
+      geom_point(data = plot.data %>% filter(outlier1==TRUE),
+                 aes_string(x=names(plot.data)[1],y=names(plot.data)[2]),colour=alpha("purple",0.5),size=2) +
       lims(x=range(plot.data[,1]),y=range(plot.data[,2]))
     
     #extract points to flag as outliers
