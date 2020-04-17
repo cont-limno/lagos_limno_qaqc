@@ -3,6 +3,7 @@ library(robustbase)
 library(tidyverse)
 library(lubridate)
 library(clipr)
+library(plotly)
 rm(list=ls())
 
 param_names <- unlist(strsplit( #names of the parameters included in LAGOS_US
@@ -79,8 +80,31 @@ write_clip(total_obs,return_new=TRUE) # Look at the number of data points and va
 
 #QAQC data: Run the following scripts in order.
 
-# #Check for any missing censor codes
+#Check for any missing censor codes
 source("scripts/missing_censor_codes.R") #look file written to output folder. If any observations exist, send to data manager to address
+
+#Look at ECDFs of variables
+source("scripts/ecdf.R")
+
+#generate individual plots for variables that appear to be off and explore
+ch.parm = "tn"
+which.col = which(variable.names == ch.parm)
+variable.data = Data[,c(program.col,variable.cols[which.col])] %>% 
+    gather(value="value",key="key",-programname_lagos_us) %>%
+    drop_na() %>% 
+    filter(value >=0) %>% 
+    # mutate(value = value + max(1-min(value),0)) %>%
+    group_by(programname_lagos_us) %>% 
+    mutate(n=n()) %>% 
+    ungroup() %>% 
+    filter(n > 10)
+p <- ggplot(data = variable.data,aes(x=value,color=programname_lagos_us)) + 
+        stat_ecdf(geom="point") + 
+        scale_x_log10(labels = scales::comma) +
+        labs(x=variable.names[which.col],y="ECFD") +
+    geom_vline(xintercept = 1)
+ggplotly(p)
+temp <- Data %>% filter(programname_lagos_us=="ND_USGS") %>% select('lagoslakeid',ch.parm,paste(ch.parm,'_censorcode',sep="")) %>% drop_na()
 
 #estimate euclidian distances between all points and identify points that are long way
 #away from their nearist nth neighbor

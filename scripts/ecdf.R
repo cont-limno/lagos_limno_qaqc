@@ -1,5 +1,3 @@
-ggplot(data = variable.data %>% mutate(tn = tn),aes(x=tn,color=programname_lagos_us)) + stat_ecdf() + scale_x_log10()
-
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(robustbase,gplots,scales,gridExtra)
 
@@ -14,16 +12,17 @@ for (i in 1:length(variable.cols)) {
         gather(value="value",key="key",-programname_lagos_us) %>%
         drop_na() %>% 
         filter(value >=0) %>% 
-        mutate(value = value + max(1-min(value),0)) %>% 
+        # mutate(value = value + max(1-min(value),0)) %>% 
         group_by(programname_lagos_us) %>% 
         mutate(n=n()) %>% 
         ungroup() %>% 
         filter(n > 10)
     if(nrow(variable.data)>10) {
     plot[[z]] <- ggplot(data = variable.data,aes(x=value,color=programname_lagos_us)) + 
-        stat_ecdf() + 
+        stat_ecdf(geom = "point",alpha=0.5) + 
         scale_x_log10(labels = scales::comma) +
-        labs(x=variable.names[i],y="ECFD")
+        labs(x=variable.names[i],y="ECFD") +
+        geom_vline(xintercept = 1)
 
     if (z %% 3 == 0) { ## print 8 plots on a page
         print (do.call(grid.arrange,  c(plot,ncol=1)))
